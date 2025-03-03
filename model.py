@@ -11,7 +11,7 @@ class SemanticClassifier(nn.Module):
             nn.Linear(768, 256),
             nn.GELU(),
             nn.LayerNorm(256),
-            nn.Dropout(0.3),
+            nn.Dropout(0.2),
             nn.Linear(256, num_classes),
         )
 
