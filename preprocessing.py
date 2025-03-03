@@ -12,31 +12,37 @@ import langdetect
 from nltk.tokenize import word_tokenize
 
 demoji.download_codes()
-nltk.download('punkt_tab')
+nltk.download("punkt_tab")
+
 
 def load_spacy_model(model_name="en_core_web_sm"):
-    try:        
+    try:
         import spacy
+
         return spacy.load(model_name)
     except OSError:
         print(f"⚠️ SpaCy model '{model_name}' not found. Downloading...")
         import spacy.cli
+
         spacy.cli.download(model_name)
         return spacy.load(model_name)
-    
-class MultilingualLemmatizer():
+
+
+class MultilingualLemmatizer:
 
     def __init__(self):
         self.nlp_en = load_spacy_model("en_core_web_sm")
         self.nlp_ms = malaya.stem.sastrawi()
 
-    def lemmatize_english(self,text):
+    def lemmatize_english(self, text):
         doc = self.nlp_en(text)
         return " ".join([token.lemma_ for token in doc])
 
     def lemmatize_malay(self, text):
         doc = self.nlp_ms(text)
-        return " ".join([word.lemma for sentence in doc.sentences for word in sentence.words])
+        return " ".join(
+            [word.lemma for sentence in doc.sentences for word in sentence.words]
+        )
 
     def segment_chinese(self, text):
         return " ".join(jieba.cut(text))
@@ -52,7 +58,7 @@ class MultilingualLemmatizer():
             lang = detect(word)
         except:
             lang = "en"
-        
+
         if lang == "en":
             return self.lemmatize_english(word)
         elif lang == "ms":
@@ -61,8 +67,9 @@ class MultilingualLemmatizer():
             return self.segment_chinese(word)
         return word
 
-class Preprocessing():
-    def __init__(self,additional_fun=None):
+
+class Preprocessing:
+    def __init__(self, additional_fun=None):
         with open("stopwords/cn_stopwords.txt", "r", encoding="utf-8") as file:
             chinese_stopwords = {line.strip() for line in file}
 
@@ -71,24 +78,30 @@ class Preprocessing():
 
         with open("stopwords/ms_stopwords.txt", "r", encoding="utf-8") as file2:
             malay_stopwords = {line.strip() for line in file2}
-        
+
         with open("stopwords/en_stopwords.txt", "r", encoding="utf-8") as file3:
             english_stopwords = {line.strip() for line in file3}
-        
+
         with open("contractions/contractions.json", "r", encoding="utf-8") as file4:
             self.contractions = json.load(file4)
-        
-        self.stopwords = set(english_stopwords | chinese_stopwords | manglish_stopwords | malay_stopwords)
+
+        self.stopwords = set(
+            english_stopwords | chinese_stopwords | manglish_stopwords | malay_stopwords
+        )
         self.lemmatizer = MultilingualLemmatizer()
         self.translator = Translator()
         self.additional_fun = additional_fun
 
     def stopwords_removal(self, string):
         return " ".join(filter(lambda x: x not in self.stopwords, string.split()))
-        
+
     def digit2word(self, string):
-        return re.sub(r"\d+", lambda x: num2words(int(x.group(0)), lang="en").replace(" ", "_"), string)
-    
+        return re.sub(
+            r"\d+",
+            lambda x: num2words(int(x.group(0)), lang="en").replace(" ", "_"),
+            string,
+        )
+
     def demoji_text(self, string):
         emoji_dict = demoji.findall(string)
         if not emoji_dict:
@@ -96,13 +109,13 @@ class Preprocessing():
         return re.sub(
             "|".join(map(re.escape, emoji_dict)),
             lambda match: emoji_dict[match.group(0)].replace(" ", "_"),
-            string
+            string,
         )
 
     def remove_email_url(self, string):
         return re.sub(r"https?://\S+|\S+@\S+", "", string)
 
-    def remove_whitespace(self,string):
+    def remove_whitespace(self, string):
         string = re.sub(r"\n(?!\n)", " ", string)
         string = re.sub(r"\n+", "\n", string)
         string = re.sub(r" +", " ", string).strip()
@@ -111,38 +124,43 @@ class Preprocessing():
         return string
 
     def separate_chinese_english(self, text):
-        text = re.sub(r'([\u4e00-\u9fff])([^\u4e00-\u9fff])', r'\1 \2', text)
-        text = re.sub(r'([^\u4e00-\u9fff])([\u4e00-\u9fff])', r'\1 \2', text)
-        text = re.sub(r'\s+([,.!?])', r'\1', text)  
-        text = re.sub(r'([,.!?])\s+', r'\1 ', text)
+        text = re.sub(r"([\u4e00-\u9fff])([^\u4e00-\u9fff])", r"\1 \2", text)
+        text = re.sub(r"([^\u4e00-\u9fff])([\u4e00-\u9fff])", r"\1 \2", text)
+        text = re.sub(r"\s+([,.!?])", r"\1", text)
+        text = re.sub(r"([,.!?])\s+", r"\1 ", text)
         return text.strip()
 
-    
     def expand_slang(self, string):
         return " ".join([self.contractions.get(word, word) for word in string.split()])
 
     def handle_negation(self, string):
         string = re.sub(r"\b(not|never|no|不|tak|bukan)\s+(\w+)", r"\1_\2", string)
         return string
-    
-    def multilingualLemmatize(self,string):
+
+    def multilingualLemmatize(self, string):
         return self.lemmatizer.lemmatize_mixed_text(string)
-    
+
+    def lowercasing_words(self, string):
+        return string.lower()
+
     def remove_punctuation_exception(self, string):
         return re.sub(r"[^\w\s!?]", "", string)
-    
+
     async def translate_if_needed(self, string):
         try:
             detected_lang = detect(string)
-            if detected_lang in ['id', 'zh']:
-                translated_text = await self.translator.translate(string, src=detected_lang, dest='en')
+            if detected_lang in ["id", "zh"]:
+                translated_text = await self.translator.translate(
+                    string, src=detected_lang, dest="en"
+                )
                 return translated_text.text
         except langdetect.lang_detect_exception.LangDetectException:
-            return string 
+            return string
         return string
-    
+
     async def preprocessing_pipeline(self, text):
         text = str(text)
+        text = self.lowercasing_words(text)
         text = self.remove_email_url(text)
         text = self.separate_chinese_english(text)
         text = self.expand_slang(text)
@@ -159,6 +177,3 @@ class Preprocessing():
             text = self.additional_fun(text)
 
         return text
-
-
-
