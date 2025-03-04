@@ -1,13 +1,13 @@
 import torch
 from transformers import BertTokenizer
 from preprocessing import Preprocessing
-from model import SemanticClassifier
+from model2 import SemanticClassifier
 import torch.serialization
 
 torch.serialization.add_safe_globals([SemanticClassifier])
 labels = ["Negative", "Neutral", "Positive"]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
+tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
 preprocessing_instance = Preprocessing()
 model = torch.load(
     "data/semantic_classifier.pth", map_location=device, weights_only=False

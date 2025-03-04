@@ -143,8 +143,17 @@ class Preprocessing:
     def lowercasing_words(self, string):
         return string.lower()
 
+    def prevent_null(self, text):
+        if not isinstance(text, str):
+            return "'null'"
+        text = text.strip()
+        return text if text else "'null'"
+
     def remove_punctuation_exception(self, string):
-        return re.sub(r"[^\w\s!?]", "", string)
+        return re.sub(r"[^\w\s!?]", " ", string)
+
+    def remove_mentions(self, string):
+        return re.sub(r"@\w+", "", string)
 
     async def translate_if_needed(self, string):
         try:
@@ -160,8 +169,8 @@ class Preprocessing:
 
     async def preprocessing_pipeline(self, text):
         text = str(text)
-        text = self.lowercasing_words(text)
         text = self.remove_email_url(text)
+        text = self.remove_mentions(text)
         text = self.separate_chinese_english(text)
         text = self.expand_slang(text)
         text = self.handle_negation(text)
@@ -172,6 +181,8 @@ class Preprocessing:
         text = await self.translate_if_needed(text)
         text = self.multilingualLemmatize(text)
         text = self.stopwords_removal(text)
+        text = self.lowercasing_words(text)
+        text = self.prevent_null(text)
 
         if self.additional_fun:
             text = self.additional_fun(text)
