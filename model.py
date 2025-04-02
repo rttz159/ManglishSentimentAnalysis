@@ -5,7 +5,7 @@ import torch.nn as nn
 class SemanticClassifier(nn.Module):
     def __init__(self, num_classes=3):
         super(SemanticClassifier, self).__init__()
-        self.bert = BertModel.from_pretrained("bert-base-multilingual-cased")
+        self.bert = BertModel.from_pretrained("bert-base-multilingual-uncased")
         self.dropout = nn.Dropout(0.2)
         self.classifier = nn.Sequential(
             nn.Linear(768, 256),
@@ -14,9 +14,6 @@ class SemanticClassifier(nn.Module):
             nn.Dropout(0.2),
             nn.Linear(256, num_classes),
         )
-
-        for param in self.bert.encoder.layer[:-6].parameters():
-            param.requires_grad = False
 
     def forward(self, input_ids, attention_mask=None):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)

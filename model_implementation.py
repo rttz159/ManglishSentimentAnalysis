@@ -1,7 +1,7 @@
 import torch
 from transformers import BertTokenizer
 from preprocessing import Preprocessing
-from model2 import SemanticClassifier
+from model import SemanticClassifier
 import torch.serialization
 
 torch.serialization.add_safe_globals([SemanticClassifier])
