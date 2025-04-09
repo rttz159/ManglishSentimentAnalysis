@@ -6,8 +6,11 @@ import matplotlib.pyplot as plt
 import asyncio
 from model_implementation import predict
 
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
+try:
+    loop = asyncio.get_running_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
 
 async def analyze_sentiment(text):
