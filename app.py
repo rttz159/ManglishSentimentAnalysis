@@ -3,24 +3,11 @@ import pandas as pd
 import plotly.express as px
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-import asyncio
 from model_implementation import predict
 
-try:
-    loop = asyncio.get_running_loop()
-except RuntimeError:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
 
-
-async def analyze_sentiment(text):
-    return await predict(text)
-
-
-async def process_dataframe(df, text_column, sentiment_col):
-    tasks = [analyze_sentiment(text) for text in df[text_column]]
-    sentiments = await asyncio.gather(*tasks)
-    df[sentiment_col] = sentiments
+def process_dataframe(df, text_column, sentiment_col):
+    df[sentiment_col] = df[text_column].apply(predict)
     return df
 
 
@@ -61,9 +48,7 @@ if option == "Upload CSV":
             or st.session_state.text_column != text_column
         ):
             st.write("Processing sentiment analysis...")
-            processed_df = loop.run_until_complete(
-                process_dataframe(df, text_column, sentiment_col)
-            )
+            processed_df = process_dataframe(df, text_column, sentiment_col)
             st.session_state.processed_df = processed_df
             st.session_state.text_column = text_column
             st.success("Sentiment analysis complete!")
@@ -139,7 +124,7 @@ elif option == "Upload Text File":
 
         if st.button("Run"):
             st.write("Processing...")
-            result = loop.run_until_complete(analyze_sentiment(uploaded_text))
+            result = predict(uploaded_text)
             st.success("Processing complete!")
             st.subheader("Sentiment Result")
             st.write(f"The input file's sentiment is '{result}'.")
@@ -154,7 +139,7 @@ elif option == "Enter Text":
     if st.button("Run"):
         if data.strip():
             st.write("Processing...")
-            result = loop.run_until_complete(analyze_sentiment(data))
+            result = predict(data)
             st.success("Processing complete!")
             st.subheader("Sentiment Result")
             st.write(f"The input text's sentiment is '{result}'.")

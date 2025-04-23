@@ -70,19 +70,23 @@ class MultilingualLemmatizer:
 
 class Preprocessing:
     def __init__(self, additional_fun=None):
-        with open("stopwords/cn_stopwords.txt", "r", encoding="utf-8") as file:
+        with open("data/stopwords/cn_stopwords.txt", "r", encoding="utf-8") as file:
             chinese_stopwords = {line.strip() for line in file}
 
-        with open("stopwords/manglish_stopwords.txt", "r", encoding="utf-8") as file1:
+        with open(
+            "data/stopwords/manglish_stopwords.txt", "r", encoding="utf-8"
+        ) as file1:
             manglish_stopwords = {line.strip() for line in file1}
 
-        with open("stopwords/ms_stopwords.txt", "r", encoding="utf-8") as file2:
+        with open("data/stopwords/ms_stopwords.txt", "r", encoding="utf-8") as file2:
             malay_stopwords = {line.strip() for line in file2}
 
-        with open("stopwords/en_stopwords.txt", "r", encoding="utf-8") as file3:
+        with open("data/stopwords/en_stopwords.txt", "r", encoding="utf-8") as file3:
             english_stopwords = {line.strip() for line in file3}
 
-        with open("contractions/contractions.json", "r", encoding="utf-8") as file4:
+        with open(
+            "data/contractions/contractions.json", "r", encoding="utf-8"
+        ) as file4:
             self.contractions = json.load(file4)
 
         self.stopwords = set(
@@ -188,3 +192,18 @@ class Preprocessing:
             text = self.additional_fun(text)
 
         return text
+
+    def preprocessing_pipeline_roberta(self, text):
+        text = str(text)
+        text = self.remove_email_url(text)
+        text = self.remove_mentions(text)
+        text = self.separate_chinese_english(text)
+        text = self.handle_negation(text)
+        text = re.sub(
+            r"(\w+)([^\w\s])(\w+)", r"\1 \2 \3", text
+        )  # separate words and punctuations
+        text = re.sub(r"([a-zA-Z])([0-9])", r"\1 \2", text)  # separate text and digits
+        text = self.demoji_text(text)
+        text = self.remove_whitespace(text)
+
+        return text.strip()
