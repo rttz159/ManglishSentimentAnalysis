@@ -84,7 +84,9 @@ if option == "Upload CSV":
             key="csv_sentiment_option",
         )
         text_data = " ".join(
-            processed_df[processed_df[sentiment_col] == sentiment_option][text_column]
+            processed_df[processed_df[sentiment_col] == sentiment_option][
+                text_column
+            ].astype(str)
         )
         wordcloud = WordCloud(width=800, height=400, background_color="black").generate(
             text_data
